@@ -35,9 +35,9 @@ $ echo "<ﾎﾚ>こんにちは、セカイ<ﾗﾀ>" | ./a1a_gen -p 20 -i - -o -
  <dd>The name of input file, `-` for standard input.
  <dt><code>-o &lt;output file&gt;</code>
  <dd>The name of output file, `-` for standard output. Output data is raw PCM, 48000Hz, signed-16bit, stereo format as default.
- <dt><code>-d &lt;speed (dot length, msec)&gt;
+ <dt><code>-d &lt;speed (dot length, msec)&gt;</code>
  <dd>Morse code speed by dot length, default <code>-d 60</code>.
- <dt><code>-p &lt;speed (PARIS WPM)&gt;
+ <dt><code>-p &lt;speed (PARIS WPM)&gt;</code>
  <dd>Morse code speed by PARIS WPM.
 </dl>
 
