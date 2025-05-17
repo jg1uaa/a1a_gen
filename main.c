@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
 	if (!quiet) {
 		if ((d = output_sec())) {
 			fprintf(stderr, "%d characters %.2f sec %.2f cpm\n",
-				par.sent_chars, d, par.sent_chars / d);
+				par.sent_chars, d, 60 * par.sent_chars / d);
 		} else {
 			fprintf(stderr, "%d characters\n", par.sent_chars);
 		}
