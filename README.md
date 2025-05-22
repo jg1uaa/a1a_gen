@@ -22,6 +22,12 @@ Note: using both `-d` and `-p` option is prohibited.
 $ echo "<bt>Hello, world<ar>" | ./a1a_gen -d 50 -i - -o - | aucat -e s16le -i -
 ```
 
+#### Linux (with pacat)
+
+```
+$ echo "<ﾎﾚ>こんにちは、セカイ<ﾗﾀ>" | ./a1a_gen -p 20 -i - -o - | pacat --format=s16le --rate=48000
+```
+
 #### Linux (with aplay)
 
 ```
