@@ -3,7 +3,7 @@
 ---
 ## Description
 
-a simple morse code raw-format PCM data generator alike [wrigjl/morseplayer](https://github.com/wrigjl/morseplayer), with Japanese Character (和文, wa-bun) support
+a simple morse code raw-format PCM data generator alike [wrigjl/morseplayer](https://github.com/wrigjl/morseplayer), with Japanese character (和文, wa-bun) support
 
 ## Usage
 
@@ -38,9 +38,9 @@ $ echo "<ﾎﾚ>こんにちは、セカイ<ﾗﾀ>" | ./a1a_gen -p 20 -i - -o -
 
 <dl>
  <dt><code>-i &lt;input file&gt;</code>
- <dd>The name of input file, `-` for standard input.
+ <dd>The name of input file, <code>-</code> for standard input.
  <dt><code>-o &lt;output file&gt;</code>
- <dd>The name of output file, `-` for standard output. Output data is raw PCM, 48000Hz, signed-16bit, stereo format as default.
+ <dd>The name of output file, <code>-</code> for standard output. Output data is raw PCM, 48000Hz, signed-16bit, stereo format as default.
  <dt><code>-d &lt;speed (dot length, msec)&gt;</code>
  <dd>Morse code speed by dot length, default <code>-d 60</code>.
  <dt><code>-p &lt;speed (PARIS WPM)&gt;</code>
