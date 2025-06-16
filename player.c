@@ -43,10 +43,12 @@ static const struct morse_table *fetch_code(wchar_t c)
 	return NULL;
 }
 
+static bool space_sent = true;
+static bool disable_character_space = false;
+
 static void play_line(wchar_t *buf)
 {
 	wchar_t *p;
-	bool space_sent, disable_character_space;
 	const struct morse_table *t;
 
 	/* ignore after '#' */
@@ -55,30 +57,28 @@ static void play_line(wchar_t *buf)
 	/* skip preceding space */
 	for (p = buf; *p && fetch_code(*p) == NULL; p++);
 
-	space_sent = disable_character_space = false;
 	for (; *p; p++) {
 		if (*p == L'<') {
 			disable_character_space = true;
 			continue;
 		} else if (*p == L'>') {
 			disable_character_space = false;
-			(*ppar->outfunc)(false, ppar->dot_usec *
-					 ppar->charspace_ratio);
 			continue;
 		}
 
 		if ((t = fetch_code(*p)) == NULL) {
-			if (space_sent) continue;
+			if (space_sent || disable_character_space) continue;
 			space_sent = true;
 			(*ppar->outfunc)(false, ppar->dot_usec *
 					 ppar->wordspace_ratio);
 		} else {
+			if (!space_sent)
+				(*ppar->outfunc)(false, ppar->dot_usec *
+						 (disable_character_space ?
+						  1 : ppar->charspace_ratio));
 			space_sent = false;
 			play_char(t->code);
 			ppar->sent_chars++;
-			(*ppar->outfunc)(false, ppar->dot_usec *
-					 (disable_character_space ? 1 :
-					  ppar->charspace_ratio));
 		}
 	}
 }
