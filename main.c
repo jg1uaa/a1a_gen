@@ -28,7 +28,7 @@ struct params par = {
 	.sent_chars = 0,
 
 	.dah_ratio = 3,
-	.wordspace_ratio = 5,
+	.wordspace_ratio = 6,
 	.charspace_ratio = 3,
 };
 
