@@ -101,7 +101,7 @@ int player_init(struct params *par)
 	ppar = par;
 	ppar->sent_chars = 0;
 
-	setlocale(LC_CTYPE, "en_US.UTF-8"); /* UTF-8 locale required */
+	setlocale(LC_CTYPE, "C.UTF-8"); /* UTF-8 locale required */
 
 	fp = strcmp("-", ppar->infile) ? fopen(ppar->infile, "r") : stdin;
 	if (fp == NULL) {
