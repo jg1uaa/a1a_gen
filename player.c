@@ -44,7 +44,8 @@ static const struct morse_table *fetch_code(wchar_t c)
 }
 
 static bool space_sent = true;
-static bool disable_character_space = false;
+static bool disable_char_space = false;
+static bool char_space_is_disabled = false;
 
 static void play_line(wchar_t *buf)
 {
@@ -59,23 +60,28 @@ static void play_line(wchar_t *buf)
 
 	for (; *p; p++) {
 		if (*p == L'<') {
-			disable_character_space = true;
+			disable_char_space = true;
+			char_space_is_disabled = space_sent;
 			continue;
 		} else if (*p == L'>') {
-			disable_character_space = false;
+			disable_char_space = false;
+			char_space_is_disabled = false;
 			continue;
 		}
 
 		if ((t = fetch_code(*p)) == NULL) {
-			if (space_sent || disable_character_space) continue;
+			if (space_sent || disable_char_space) continue;
 			space_sent = true;
 			(*ppar->outfunc)(false, ppar->dot_usec *
 					 ppar->wordspace_ratio);
 		} else {
-			if (!space_sent)
+			if (!space_sent) {
 				(*ppar->outfunc)(false, ppar->dot_usec *
-						 (disable_character_space ?
+						 (char_space_is_disabled ?
 						  1 : ppar->charspace_ratio));
+				char_space_is_disabled =
+					disable_char_space;
+			}
 			space_sent = false;
 			play_char(t->code);
 			ppar->sent_chars++;
