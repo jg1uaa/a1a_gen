@@ -11,6 +11,10 @@ static struct params *ppar;
 
 static FILE *fp;
 
+static bool space_sent = true;
+static bool disable_char_space = false;
+static bool char_space_is_disabled = false;
+
 static void play_char(const char *code)
 {
 	int i, code_len = strlen(code);
@@ -24,9 +28,14 @@ static void play_char(const char *code)
 			(*ppar->outfunc)(true, ppar->dot_usec *
 					 ppar->dah_ratio);
 			break;
+		case ' ':
+			if (!char_space_is_disabled)
+				(*ppar->outfunc)(false, ppar->dot_usec *
+						 ppar->charspace_ratio);
+			break;
 		}
 
-		if (i != code_len - 1)
+		if (i != code_len - 1 && (code[i] == '.' || code[i] == '-'))
 			(*ppar->outfunc)(false, ppar->dot_usec);
 	}
 }
@@ -42,10 +51,6 @@ static const struct morse_table *fetch_code(wchar_t c)
 
 	return NULL;
 }
-
-static bool space_sent = true;
-static bool disable_char_space = false;
-static bool char_space_is_disabled = false;
 
 static void play_line(wchar_t *buf)
 {
