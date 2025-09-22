@@ -30,6 +30,8 @@ struct params par = {
 	.dah_ratio = 3,
 	.wordspace_ratio = 6,
 	.charspace_ratio = 3,
+
+	.ignore_crlf = false,
 };
 
 int main(int argc, char *argv[])
@@ -39,7 +41,7 @@ int main(int argc, char *argv[])
 	bool quiet = false;
 
 	while ((ch = getopt(argc, argv,
-			    "i:o:r:c:t:T:v:f:w:d:p:H:W:C:q")) != -1) {
+			    "i:o:r:c:t:T:v:f:w:d:p:H:W:C:qn")) != -1) {
 		switch (ch) {
 		case 'i': par.infile = optarg; break;
 		case 'o': par.outfile = optarg; break;
@@ -56,6 +58,7 @@ int main(int argc, char *argv[])
 		case 'W': par.wordspace_ratio = atof(optarg); break;
 		case 'C': par.charspace_ratio = atof(optarg); break;
 		case 'q': quiet = true; break;
+		case 'n': par.ignore_crlf = true; break;
 		}
 	}
 

@@ -26,6 +26,8 @@ struct params {
 	double dah_ratio;
 	double wordspace_ratio;
 	double charspace_ratio;
+
+	bool ignore_crlf;
 };
 
 #endif

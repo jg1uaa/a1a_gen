@@ -64,6 +64,9 @@ static void play_line(wchar_t *buf)
 	for (p = buf; *p && fetch_code(*p) == NULL; p++);
 
 	for (; *p; p++) {
+		if (ppar->ignore_crlf && (*p == L'\n' || *p == L'\r'))
+			continue;
+
 		if (*p == L'<') {
 			disable_char_space = true;
 			char_space_is_disabled = space_sent;
