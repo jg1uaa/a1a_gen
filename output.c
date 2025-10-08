@@ -106,5 +106,5 @@ int output_init(struct params *par)
 
 double output_sec(void)
 {
-	return samples_counter / ppar->sample_freq;
+	return (double)samples_counter / ppar->sample_freq;
 }
