@@ -4,6 +4,7 @@
 #include <wchar.h>
 
 struct morse_table {
+	const int count;
 	const wchar_t *characters;
 	const char *code;
 };

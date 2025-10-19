@@ -92,7 +92,7 @@ static void play_line(wchar_t *buf)
 			}
 			space_sent = false;
 			play_char(t->code);
-			ppar->sent_chars++;
+			ppar->sent_chars += t->count;
 		}
 	}
 }
