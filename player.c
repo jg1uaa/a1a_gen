@@ -32,10 +32,10 @@ static void play_char(const char *code)
 			if (!char_space_is_disabled)
 				(*ppar->outfunc)(false, ppar->dot_usec *
 						 ppar->charspace_ratio);
-			break;
+			continue;
 		}
 
-		if (i != code_len - 1 && (code[i] == '.' || code[i] == '-'))
+		if (i < code_len - 1 && code[i + 1] != ' ')
 			(*ppar->outfunc)(false, ppar->dot_usec);
 	}
 }
