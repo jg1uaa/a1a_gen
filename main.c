@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <locale.h>
 #include <unistd.h>
 #include "player.h"
 #include "output.h"
@@ -32,16 +33,20 @@ struct params par = {
 	.charspace_ratio = 3,
 
 	.ignore_crlf = false,
+	.ignore_char = L"",
 };
 
 int main(int argc, char *argv[])
 {
 	int ch;
+	size_t n;
 	double d;
 	bool quiet = false;
 
+	setlocale(LC_CTYPE, "C.UTF-8"); /* UTF-8 locale required */
+
 	while ((ch = getopt(argc, argv,
-			    "i:o:r:c:t:T:v:f:w:d:p:H:W:C:qn")) != -1) {
+			    "i:o:r:c:t:T:v:f:w:d:p:H:W:C:qnI:")) != -1) {
 		switch (ch) {
 		case 'i': par.infile = optarg; break;
 		case 'o': par.outfile = optarg; break;
@@ -59,6 +64,10 @@ int main(int argc, char *argv[])
 		case 'C': par.charspace_ratio = atof(optarg); break;
 		case 'q': quiet = true; break;
 		case 'n': par.ignore_crlf = true; break;
+		case 'I':
+			n = mbstowcs(par.ignore_char, optarg, IGNORE_CHARS);
+			par.ignore_char[(n == (size_t)-1) ? 0 : n] = L'\0';
+			break;
 		}
 	}
 

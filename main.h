@@ -6,6 +6,9 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <wchar.h>
+
+#define IGNORE_CHARS 64
 
 struct params {
 	char *infile;
@@ -28,6 +31,7 @@ struct params {
 	double charspace_ratio;
 
 	bool ignore_crlf;
+	wchar_t ignore_char[IGNORE_CHARS + 1];
 };
 
 #endif

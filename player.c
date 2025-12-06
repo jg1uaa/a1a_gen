@@ -3,7 +3,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <locale.h>
 #include "player.h"
 #include "table.h"
 
@@ -77,6 +76,10 @@ static void play_line(wchar_t *buf)
 			continue;
 		}
 
+		if (!disable_char_space &&
+		    wcschr(ppar->ignore_char, *p) != NULL)
+			continue;
+
 		if ((t = fetch_code(*p)) == NULL) {
 			if (space_sent || disable_char_space) continue;
 			space_sent = true;
@@ -114,8 +117,6 @@ int player_init(struct params *par)
 
 	ppar = par;
 	ppar->sent_chars = 0;
-
-	setlocale(LC_CTYPE, "C.UTF-8"); /* UTF-8 locale required */
 
 	fp = strcmp("-", ppar->infile) ? fopen(ppar->infile, "r") : stdin;
 	if (fp == NULL) {
