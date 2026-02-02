@@ -2,7 +2,9 @@
 // SPDX-FileCopyrightText: 2025 SASANO Takayoshi <uaa@uaa.org.uk>
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <endian.h>
 #include <limits.h>
 #include <math.h>
 #include "output.h"
@@ -10,11 +12,59 @@
 static struct params *ppar;
 
 static double (*wave)(int, int);
+static void *(*fill)(void *, short);
 static bool format_bigendian;
-static bool format_signed;
 static bool format_16bit;
 static int64_t samples_counter;
 static FILE *fp;
+static unsigned int tcache_index;
+
+struct tone_cache {
+	bool on;
+	int64_t usec;
+	int64_t bufsize;
+	void *buf;
+};
+
+#define TCACHE_SIZE 8
+static struct tone_cache tcache[TCACHE_SIZE];
+
+static void add_tone_cache(bool on, int64_t usec, int64_t bufsize, void *buf)
+{
+	struct tone_cache *t = &tcache[tcache_index % TCACHE_SIZE];
+
+	free(t->buf);
+	t->on = on;
+	t->usec = usec;
+	t->bufsize = bufsize;
+	t->buf = buf;
+
+	tcache_index++;
+}
+
+static void *find_tone_cache(bool on, int64_t usec, int64_t *bufsize)
+{
+	int i;
+	struct tone_cache *t;
+
+	for (i = 0; i < TCACHE_SIZE; i++) {
+		t = &tcache[i];
+		if (t->on == on && t->usec == usec) {
+			*bufsize = t->bufsize;
+			return t->buf;
+		}
+	}
+
+	return NULL;
+}
+
+static void free_tone_cache(void)
+{
+	int i;
+
+	for (i = 0; i < TCACHE_SIZE; i++)
+		free(tcache[i].buf);
+}
 
 static double wave_sine(int pos, int cycle)
 {
@@ -40,13 +90,46 @@ static double wave_triangle(int pos, int cycle)
 	else return v - 4.0;
 }
 
-static void play_tone(bool on, int64_t usec)
+static void *fill_u8(void *buf, short sample)
 {
-	int64_t i;
-	double t;
-	short s, n;
+	int i;
+	uint8_t s = (sample >> 8) ^ 0x80;
+	uint8_t *p = buf;
 
-	for (i = 0; i < (ppar->sample_freq * usec) / 1000000; i++) {
+	for (i = 0; i < ppar->channels; i++)
+		*p++ = s;
+
+	return p;
+}
+
+static void *fill_s16(void *buf, short sample)
+{
+	int i;
+	short s = format_bigendian ? htobe16(sample) : htole16(sample);
+	short *p = buf;
+
+	for (i = 0; i < ppar->channels; i++)
+		*p++ = s;
+
+	return p;
+}
+
+#define bufsize_factor ((format_16bit ? 2 : 1) * ppar->channels)
+
+static void *alloc_tone(bool on, int64_t usec, int64_t *bufsize)
+{
+	int64_t i, samples;
+	double t;
+	short s;
+	void *buf, *p;
+
+	samples = (ppar->sample_freq * usec) / 1000000;
+	*bufsize = samples * bufsize_factor;
+
+	if ((buf = p = malloc(*bufsize)) == NULL)
+		abort();
+
+	for (i = 0; i < samples; i++) {
 		if (on) {
 			t = (*wave)(i, ppar->sample_freq / ppar->tone1_freq);
 			if (ppar->tone2_freq) {
@@ -58,19 +141,30 @@ static void play_tone(bool on, int64_t usec)
 			s = 0;
 		}
 
-		for (n = 0; n < ppar->channels; n++) {
-			if (format_16bit && !format_bigendian) fputc(s, fp);
-			fputc((s >> 8) ^ (format_signed ? 0x00 : 0x80), fp);
-			if (format_16bit && format_bigendian) fputc(s, fp);
-		}
+		p = (*fill)(p, s);
 	}
 
-	samples_counter += i;
+	return buf;
+}
+
+static void play_tone(bool on, int64_t usec)
+{
+	int64_t bufsize;
+	void *buf;
+
+	if ((buf = find_tone_cache(on, usec, &bufsize)) == NULL) {
+		buf = alloc_tone(on, usec, &bufsize);
+		add_tone_cache(on, usec, bufsize, buf);
+	}
+
+	fwrite(buf, bufsize, 1, fp);
+	samples_counter += bufsize / bufsize_factor;
 }
 
 int output_init(struct params *par)
 {
 	if (par == NULL) {
+		free_tone_cache();
 		fclose(fp);
 		return 0;
 	}
@@ -78,9 +172,11 @@ int output_init(struct params *par)
 	ppar = par;
 	ppar->outfunc = play_tone;
 	samples_counter = 0;
-	format_signed = format_16bit = true;
+	format_16bit = true;
 	format_bigendian = false;
 	wave = wave_sine;
+	tcache_index = 0;
+	memset(&tcache, 0, sizeof(tcache));
 
 	fp = strcmp("-", ppar->outfile) ? fopen(ppar->outfile, "w") : stdout;
 	if (fp == NULL) {
@@ -90,9 +186,9 @@ int output_init(struct params *par)
 
 	if (ppar->arg1 != NULL) {
 		if (!strcmp("u8", ppar->arg1))
-			format_signed = format_16bit = format_bigendian = false;
+			format_16bit = format_bigendian = false;
 		else if (!strcmp("s16be", ppar->arg1))
-			format_signed = format_16bit = format_bigendian = true;
+			format_16bit = format_bigendian = true;
 	}
 
 	if (ppar->arg2 != NULL) {
@@ -100,6 +196,8 @@ int output_init(struct params *par)
 		else if (!strcmp("saw", ppar->arg2)) wave = wave_saw;
 		else if (!strcmp("triangle", ppar->arg2)) wave = wave_triangle;
 	}
+
+	fill = format_16bit ? fill_s16 : fill_u8;
 
 	return 0;
 }
