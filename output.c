@@ -29,6 +29,12 @@ struct tone_cache {
 #define TCACHE_SIZE 8
 static struct tone_cache tcache[TCACHE_SIZE];
 
+static void init_tone_cache(void)
+{
+	tcache_index = 0;
+	memset(tcache, 0, sizeof(tcache));
+}
+
 static void add_tone_cache(bool on, int64_t usec, int64_t bufsize, void *buf)
 {
 	struct tone_cache *t = &tcache[tcache_index % TCACHE_SIZE];
@@ -64,6 +70,8 @@ static void free_tone_cache(void)
 
 	for (i = 0; i < TCACHE_SIZE; i++)
 		free(tcache[i].buf);
+
+	init_tone_cache();
 }
 
 static double wave_sine(int pos, int cycle)
@@ -175,8 +183,7 @@ int output_init(struct params *par)
 	format_16bit = true;
 	format_bigendian = false;
 	wave = wave_sine;
-	tcache_index = 0;
-	memset(&tcache, 0, sizeof(tcache));
+	init_tone_cache();
 
 	fp = strcmp("-", ppar->outfile) ? fopen(ppar->outfile, "w") : stdout;
 	if (fp == NULL) {
