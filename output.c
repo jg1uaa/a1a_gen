@@ -8,6 +8,7 @@
 #include <limits.h>
 #include <math.h>
 #include "output.h"
+#include "rng.h"
 
 static struct params *ppar;
 
@@ -28,6 +29,14 @@ struct tone_cache {
 
 #define TCACHE_SIZE 8
 static struct tone_cache tcache[TCACHE_SIZE];
+
+enum wave_type {
+	WAVE_INVALID,
+	WAVE_SINE,
+	WAVE_SQUARE,
+	WAVE_SAW,
+	WAVE_TRIANGLE,
+};
 
 static void init_tone_cache(void)
 {
@@ -171,6 +180,8 @@ static void play_tone(bool on, int64_t usec)
 
 int output_init(struct params *par)
 {
+	enum wave_type w;
+
 	if (par == NULL) {
 		free_tone_cache();
 		fclose(fp);
@@ -199,9 +210,21 @@ int output_init(struct params *par)
 	}
 
 	if (ppar->arg2 != NULL) {
-		if (!strcmp("square", ppar->arg2)) wave = wave_square;
-		else if (!strcmp("saw", ppar->arg2)) wave = wave_saw;
-		else if (!strcmp("triangle", ppar->arg2)) wave = wave_triangle;
+		if (!strcmp("sine", ppar->arg2)) w = WAVE_SINE;
+		else if (!strcmp("square", ppar->arg2)) w = WAVE_SQUARE;
+		else if (!strcmp("saw", ppar->arg2)) w = WAVE_SAW;
+		else if (!strcmp("triangle", ppar->arg2)) w = WAVE_TRIANGLE;
+		else if (!strcmp("random", ppar->arg2))
+			w = random_value(WAVE_SINE, WAVE_TRIANGLE);
+		else w = WAVE_INVALID;
+
+		switch (w) {
+		case WAVE_SINE: wave = wave_sine; break;
+		case WAVE_SQUARE: wave = wave_square; break;
+		case WAVE_SAW: wave = wave_saw; break;
+		case WAVE_TRIANGLE: wave = wave_triangle; break;
+		default: break;
+		}
 	}
 
 	fill = format_16bit ? fill_s16 : fill_u8;
