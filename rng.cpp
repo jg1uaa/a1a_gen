@@ -17,9 +17,7 @@ extern "C" void initialize_random_generator(void)
 
 extern "C" int random_value_int(int min, int max)
 {
-	if (min == max)
-		return min;
-	else if (min > max)
+	if (min > max)
 		std::swap(min, max);
 
 	std::uniform_int_distribution<int> d(min, max);
@@ -29,9 +27,7 @@ extern "C" int random_value_int(int min, int max)
 
 extern "C" double random_value_double(double min, double max)
 {
-	if (min == max)
-		return min;
-	else if (min > max)
+	if (min > max)
 		std::swap(min, max);
 
 	std::uniform_real_distribution<double> d(min, std::nextafter(max, std::numeric_limits<double>::infinity()));
