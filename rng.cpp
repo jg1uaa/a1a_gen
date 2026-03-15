@@ -2,6 +2,7 @@
 
 #include <random>
 #include <utility>
+#include <cmath>
 extern "C" {
 #include "rng.h"
 }
@@ -29,7 +30,7 @@ extern "C" double random_value_double(double min, double max)
 	if (min > max)
 		std::swap(min, max);
 
-	std::uniform_real_distribution<double> d(min, max);
+	std::uniform_real_distribution<double> d(min, std::nextafter(max, std::numeric_limits<double>::infinity()));
 
 	return d(r);
 }
