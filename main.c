@@ -39,8 +39,6 @@ struct params par = {
 
 double parse_value(char *str)
 {
-#define STEP 1000000
-
 	double v1, v2;
 	char *p, *q;
 
@@ -54,7 +52,7 @@ double parse_value(char *str)
 	if (p == q)
 		return v1;
 
-	return v1 + ((v2 - v1) / STEP) * random_value(0, STEP);
+	return random_value_double(v1, v2);
 }
 int main(int argc, char *argv[])
 {

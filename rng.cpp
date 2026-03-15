@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: WTFPL
 
 #include <random>
+#include <utility>
 extern "C" {
 #include "rng.h"
 }
@@ -13,9 +14,22 @@ extern "C" void initialize_random_generator(void)
 	// do nothing
 }
 
-extern "C" int random_value(int min, int max)
+extern "C" int random_value_int(int min, int max)
 {
+	if (min > max)
+		std::swap(min, max);
+
 	std::uniform_int_distribution<int> d(min, max);
+
+	return d(r);
+}
+
+extern "C" double random_value_double(double min, double max)
+{
+	if (min > max)
+		std::swap(min, max);
+
+	std::uniform_real_distribution<double> d(min, max);
 
 	return d(r);
 }

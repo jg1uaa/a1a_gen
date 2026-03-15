@@ -215,7 +215,7 @@ int output_init(struct params *par)
 		else if (!strcmp("saw", ppar->arg2)) w = WAVE_SAW;
 		else if (!strcmp("triangle", ppar->arg2)) w = WAVE_TRIANGLE;
 		else if (!strcmp("random", ppar->arg2))
-			w = random_value(WAVE_SINE, WAVE_TRIANGLE);
+			w = random_value_int(WAVE_SINE, WAVE_TRIANGLE);
 		else w = WAVE_INVALID;
 
 		switch (w) {
