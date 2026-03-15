@@ -1,8 +1,8 @@
 TARGET = a1a_gen
-OBJ = table.o player.o output.o main.o
+OBJ = table.o player.o output.o rng.o main.o
 CFLAGS = -O2 -Wall -c -fdata-sections -ffunction-sections
 LFLAGS = -Wl,--gc-sections
-LDLIBS = -lm
+LDLIBS = -lm -lstdc++
 
 all: $(TARGET)
 
@@ -14,6 +14,9 @@ player.o: player.c
 
 output.o: output.c
 	$(CC) $(CFLAGS) $< -o $@
+
+rng.o: rng.cpp
+	$(CXX) $(CFLAGS) $< -o $@
 
 main.o: main.c
 	$(CC) $(CFLAGS) $< -o $@
