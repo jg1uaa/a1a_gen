@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include "player.h"
 #include "output.h"
+#include "rng.h"
 
 extern char *optarg;
 extern int optind;
@@ -36,33 +37,56 @@ struct params par = {
 	.ignore_char = L"",
 };
 
+double parse_value(char *str)
+{
+#define STEP 1000000
+
+	double v1, v2;
+	char *p, *q;
+
+	p = str;
+	v1 = strtod(str, &p);
+	if (str == p || *p != ',')
+		return v1;
+
+	p++;
+	v2 = strtod(p, &q);
+	if (p == q)
+		return v1;
+
+	return v1 + ((v2 - v1) / STEP) * random_value(0, STEP);
+}
 int main(int argc, char *argv[])
 {
 	int ch;
 	size_t n;
 	double d;
-	bool quiet = false;
+	int quiet = -1;
 
+	initialize_random_generator();
 	setlocale(LC_CTYPE, "C.UTF-8"); /* UTF-8 locale required */
 
 	while ((ch = getopt(argc, argv,
-			    "i:o:r:c:t:T:v:f:w:d:p:H:W:C:qnI:")) != -1) {
+			    "i:o:r:c:t:T:v:f:w:d:p:H:W:C:q:nI:")) != -1) {
 		switch (ch) {
 		case 'i': par.infile = optarg; break;
 		case 'o': par.outfile = optarg; break;
 		case 'r': par.sample_freq = atoi(optarg); break;
 		case 'c': par.channels = atoi(optarg); break;
-		case 't': par.tone1_freq = atof(optarg); break;
-		case 'T': par.tone2_freq = atof(optarg); break;
-		case 'v': par.volume = atof(optarg); break;
+		case 't': par.tone1_freq = parse_value(optarg); break;
+		case 'T': par.tone2_freq = parse_value(optarg); break;
+		case 'v': par.volume = parse_value(optarg); break;
 		case 'f': par.arg1 = optarg; break;
 		case 'w': par.arg2 = optarg; break;
-		case 'd': par.dot_usec = atof(optarg) * 1000; break;
-		case 'p': par.dot_usec = 1200000 / atof(optarg); break;
-		case 'H': par.dah_ratio = atof(optarg); break;
-		case 'W': par.wordspace_ratio = atof(optarg); break;
-		case 'C': par.charspace_ratio = atof(optarg); break;
-		case 'q': quiet = true; break;
+		case 'd': par.dot_usec = parse_value(optarg) * 1000; break;
+		case 'p':
+			if ((d = parse_value(optarg)) > 0)
+				par.dot_usec = 1200000 / d;
+			break;
+		case 'H': par.dah_ratio = parse_value(optarg); break;
+		case 'W': par.wordspace_ratio = parse_value(optarg); break;
+		case 'C': par.charspace_ratio = parse_value(optarg); break;
+		case 'q': quiet = atoi(optarg); break;
 		case 'n': par.ignore_crlf = true; break;
 		case 'I':
 			n = mbstowcs(par.ignore_char, optarg, IGNORE_CHARS);
@@ -88,13 +112,29 @@ int main(int argc, char *argv[])
 
 	player_start();
 
-	if (!quiet) {
+	switch (quiet) {
+	default:
+		fprintf(stderr, "tone %.2f hz", par.tone1_freq);
+		if (par.tone2_freq > 0)
+			fprintf(stderr," + %.2f hz", par.tone2_freq);
+		fprintf(stderr, " volume %.2f\n", par.volume);
+
+		fprintf(stderr, "dot %.2f msec (%.2f wpm) ",
+			par.dot_usec / 1000.0, 1200000.0 / par.dot_usec);
+		fprintf(stderr, "dah %.2f wordspace %.2f charspace %.2f\n",
+			par.dah_ratio, par.wordspace_ratio,
+			par.charspace_ratio);
+		/*FALLTHROUGH*/
+	case 1:
 		if ((d = output_sec())) {
 			fprintf(stderr, "%d characters %.2f sec %.2f cpm\n",
 				par.sent_chars, d, 60 * par.sent_chars / d);
 		} else {
 			fprintf(stderr, "%d characters\n", par.sent_chars);
 		}
+		/*FALLTHROUGH*/
+	case 0:
+		break;
 	}		
 
 //fin2:
