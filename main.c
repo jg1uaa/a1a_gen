@@ -37,23 +37,29 @@ struct params par = {
 	.ignore_char = L"",
 };
 
-double parse_value(char *str)
+void parse_value(char *str, double *v1, double *v2)
 {
-	double v1, v2;
 	char *p, *q;
 
 	p = str;
-	v1 = strtod(str, &p);
+	*v1 = *v2 = strtod(str, &p);
 	if (str == p || *p != ',')
-		return v1;
+		return;
 
 	p++;
-	v2 = strtod(p, &q);
+	*v2 = strtod(p, &q);
 	if (p == q)
-		return v1;
+		*v2 = *v1;
+}
 
+double get_value(char *str)
+{
+	double v1, v2;
+
+	parse_value(str, &v1, &v2);
 	return random_value_double(v1, v2);
 }
+
 int main(int argc, char *argv[])
 {
 	int ch;
@@ -71,19 +77,19 @@ int main(int argc, char *argv[])
 		case 'o': par.outfile = optarg; break;
 		case 'r': par.sample_freq = atoi(optarg); break;
 		case 'c': par.channels = atoi(optarg); break;
-		case 't': par.tone1_freq = parse_value(optarg); break;
-		case 'T': par.tone2_freq = parse_value(optarg); break;
-		case 'v': par.volume = parse_value(optarg); break;
+		case 't': par.tone1_freq = get_value(optarg); break;
+		case 'T': par.tone2_freq = get_value(optarg); break;
+		case 'v': par.volume = get_value(optarg); break;
 		case 'f': par.arg1 = optarg; break;
 		case 'w': par.arg2 = optarg; break;
-		case 'd': par.dot_usec = parse_value(optarg) * 1000; break;
+		case 'd': par.dot_usec = get_value(optarg) * 1000; break;
 		case 'p':
-			if ((d = parse_value(optarg)) > 0)
+			if ((d = get_value(optarg)) > 0)
 				par.dot_usec = 1200000 / d;
 			break;
-		case 'H': par.dah_ratio = parse_value(optarg); break;
-		case 'W': par.wordspace_ratio = parse_value(optarg); break;
-		case 'C': par.charspace_ratio = parse_value(optarg); break;
+		case 'H': par.dah_ratio = get_value(optarg); break;
+		case 'W': par.wordspace_ratio = get_value(optarg); break;
+		case 'C': par.charspace_ratio = get_value(optarg); break;
 		case 'q': quiet = atoi(optarg); break;
 		case 'n': par.ignore_crlf = true; break;
 		case 'I':
