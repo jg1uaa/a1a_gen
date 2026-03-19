@@ -37,7 +37,7 @@ struct params par = {
 	.ignore_char = L"",
 };
 
-void parse_value(char *str, double *v1, double *v2)
+static void parse_value(char *str, double *v1, double *v2)
 {
 	char *p, *q;
 
@@ -52,7 +52,7 @@ void parse_value(char *str, double *v1, double *v2)
 		*v2 = *v1;
 }
 
-double get_value(char *str)
+static double get_value(char *str)
 {
 	double v1, v2;
 
