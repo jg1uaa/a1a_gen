@@ -5,6 +5,7 @@
 #include <string.h>
 #include "player.h"
 #include "table.h"
+#include "rng.h"
 
 static struct params *ppar;
 
@@ -14,6 +15,31 @@ static bool space_sent = true;
 static bool disable_char_space = false;
 static bool char_space_is_disabled = false;
 
+/* fluctuation 1/f */
+static double calc_1f(int index)
+{
+	const double lim[] = {0.05, 0.25}; // 0.25 for word start
+	static double x = 0;
+
+	if (x < lim[index] || x > 1 - lim[index])
+		return (x = random_value_double(lim[index], 1 - lim[index]));
+
+	if (x <= 0.5)
+		return (x = x + 2 * x * x);
+	else
+		return (x = x - 2 * (1 - x) * (1 - x));
+}
+
+static int64_t dot_usec(int index)
+{
+	int64_t us = ppar->dot_usec;
+
+	if (ppar->jitter)
+		us *= (1 - ppar->jitter) + (2 * ppar->jitter * calc_1f(index));
+
+	return us;
+}
+
 static void play_char(const char *code)
 {
 	int i, code_len = strlen(code);
@@ -21,21 +47,21 @@ static void play_char(const char *code)
 	for (i = 0; i < code_len; i++) {
 		switch (code[i]) {
 		case '.':
-			(*ppar->outfunc)(true, ppar->dot_usec);
+			(*ppar->outfunc)(true, dot_usec(0));
 			break;
 		case '-':
-			(*ppar->outfunc)(true, ppar->dot_usec *
+			(*ppar->outfunc)(true, dot_usec(0) *
 					 ppar->dah_ratio);
 			break;
 		case ' ':
 			if (!char_space_is_disabled)
-				(*ppar->outfunc)(false, ppar->dot_usec *
+				(*ppar->outfunc)(false, dot_usec(0) *
 						 ppar->charspace_ratio);
 			continue;
 		}
 
 		if (i < code_len - 1 && code[i + 1] != ' ')
-			(*ppar->outfunc)(false, ppar->dot_usec);
+			(*ppar->outfunc)(false, dot_usec(0));
 	}
 }
 
@@ -83,11 +109,11 @@ static void play_line(wchar_t *buf)
 		if ((t = fetch_code(*p)) == NULL) {
 			if (space_sent || disable_char_space) continue;
 			space_sent = true;
-			(*ppar->outfunc)(false, ppar->dot_usec *
+			(*ppar->outfunc)(false, dot_usec(1) *
 					 ppar->wordspace_ratio);
 		} else {
 			if (!space_sent) {
-				(*ppar->outfunc)(false, ppar->dot_usec *
+				(*ppar->outfunc)(false, dot_usec(0) *
 						 (char_space_is_disabled ?
 						  1 : ppar->charspace_ratio));
 				char_space_is_disabled =

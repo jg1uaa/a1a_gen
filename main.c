@@ -27,6 +27,7 @@ struct params par = {
 	.arg2 = NULL,
 
 	.dot_usec = 60000,
+	.jitter = 0,
 	.sent_chars = 0,
 
 	.dah_ratio = 3,
@@ -71,7 +72,7 @@ int main(int argc, char *argv[])
 	setlocale(LC_CTYPE, "C.UTF-8"); /* UTF-8 locale required */
 
 	while ((ch = getopt(argc, argv,
-			    "i:o:r:c:t:T:v:f:w:d:p:H:W:C:q:nI:")) != -1) {
+			    "i:o:r:c:t:T:v:f:w:d:p:H:W:C:q:nI:J:")) != -1) {
 		switch (ch) {
 		case 'i': par.infile = optarg; break;
 		case 'o': par.outfile = optarg; break;
@@ -96,6 +97,7 @@ int main(int argc, char *argv[])
 			n = mbstowcs(par.ignore_char, optarg, IGNORE_CHARS);
 			par.ignore_char[(n == (size_t)-1) ? 0 : n] = L'\0';
 			break;
+		case 'J': par.jitter = get_value(optarg); break;
 		}
 	}
 
@@ -103,7 +105,8 @@ int main(int argc, char *argv[])
 	    par.sample_freq < 8000 || par.channels < 1 || par.channels > 2 ||
 	    par.tone1_freq < 1 || par.tone2_freq < 0 || par.volume < 0 ||
 	    par.dot_usec < 1000 || par.dah_ratio < 1 ||
-	    par.wordspace_ratio < 1 || par.charspace_ratio < 1) {
+	    par.wordspace_ratio < 1 || par.charspace_ratio < 1 ||
+	    par.jitter < 0.0 || par.jitter >= 0.251 /* DBL_EPSILON */) {
 		fprintf(stderr,
 			"usage: %s -i [infile] -o [outfile] "
 			"-d [dot_msec] -p [paris_wpm]\n",

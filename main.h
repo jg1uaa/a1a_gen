@@ -24,6 +24,7 @@ struct params {
 	void *arg2;		// wave type
 
 	int64_t dot_usec;
+	double jitter;
 	int sent_chars;
 
 	double dah_ratio;
