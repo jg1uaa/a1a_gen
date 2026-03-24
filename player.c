@@ -14,6 +14,7 @@ static FILE *fp;
 static bool space_sent = true;
 static bool disable_char_space = false;
 static bool char_space_is_disabled = false;
+static bool use_alt_code = false;
 
 /* fluctuation 1/f */
 static double calc_1f(int index)
@@ -100,6 +101,12 @@ static void play_line(wchar_t *buf)
 			disable_char_space = false;
 			char_space_is_disabled = false;
 			continue;
+		} else if (*p == L'{') {
+			use_alt_code = true;
+			continue;
+		} else if (*p == L'}') {
+			use_alt_code = false;
+			continue;
 		}
 
 		if (!disable_char_space &&
@@ -120,7 +127,8 @@ static void play_line(wchar_t *buf)
 					disable_char_space;
 			}
 			space_sent = false;
-			play_char(t->code);
+			play_char((use_alt_code && t->alt_code != NULL) ?
+				  t->alt_code : t->code);
 			ppar->sent_chars += t->count;
 		}
 	}
