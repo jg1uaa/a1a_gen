@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2025 SASANO Takayoshi <uaa@uaa.org.uk>
+// SPDX-FileCopyrightText: 2025-2026 SASANO Takayoshi <uaa@uaa.org.uk>
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "player.h"
 #include "table.h"
@@ -15,6 +16,60 @@ static bool space_sent = true;
 static bool disable_char_space = false;
 static bool char_space_is_disabled = false;
 static bool use_alt_code = false;
+
+struct command {
+	wchar_t *string;
+	int (*function)(wchar_t *);
+	bool allow_empty;
+};
+
+static int cmd_pause(wchar_t *);
+
+static struct command keywords[] = {
+	{L"pause", cmd_pause, false},
+};
+
+static int cmd_pause(wchar_t *arg)
+{
+	double d;
+
+	if (disable_char_space)
+		return 0;
+
+	d = wcstod(arg, NULL);
+	if (d < 0) d = 0;
+	if (d > 15000) d = 15000;
+
+	space_sent = true;
+	(*ppar->outfunc)(false, d * 1000);
+
+	return 0;
+}
+
+static int parse_command(wchar_t *ptr, int len)
+{
+	int i, n;
+	wchar_t *cmd, *arg;
+
+	cmd = alloca(sizeof(wchar_t) * (len + 1));
+	for (i = n = 0; i < len; i++) {
+		if (ptr[i] != L' ')
+			cmd[n++] = ptr[i];
+	}
+	cmd[n] = L'\0';
+
+	if ((arg = wcschr(cmd, L'=')) != NULL)
+		*arg++ = L'\0';
+
+	for (i = 0; i < sizeof(keywords) / sizeof(struct command); i++) {
+		if (!wcscmp(cmd, keywords[i].string))
+			return (keywords[i].allow_empty ||
+				(arg != NULL && *arg)) ?
+				(*keywords[i].function)(arg) : -1;
+	}
+				
+	return -1;
+}
 
 /* fluctuation 1/f */
 static double calc_1f(int index)
@@ -80,7 +135,7 @@ static const struct morse_table *fetch_code(wchar_t c)
 
 static void play_line(wchar_t *buf)
 {
-	wchar_t *p;
+	wchar_t *p, *q;
 	const struct morse_table *t;
 
 	/* ignore after '#' */
@@ -106,6 +161,12 @@ static void play_line(wchar_t *buf)
 			continue;
 		} else if (*p == L'}') {
 			use_alt_code = false;
+			continue;
+		} else if (*p == L'[') {
+			for (q = ++p; *p && *p != L']'; p++);
+			if (!*p) break;
+			/* p - q: command length (without trailing L'\0') */
+			parse_command(q, p - q);
 			continue;
 		}
 
