@@ -67,7 +67,7 @@ static int parse_command(wchar_t *ptr, int len)
 				(arg != NULL && *arg)) ?
 				(*keywords[i].function)(arg) : -1;
 	}
-				
+
 	return -1;
 }
 
