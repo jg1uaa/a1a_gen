@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2025 SASANO Takayoshi <uaa@uaa.org.uk>
+// SPDX-FileCopyrightText: 2025-2026 SASANO Takayoshi <uaa@uaa.org.uk>
 
 #ifndef _MAIN_H_
 #define _MAIN_H_
