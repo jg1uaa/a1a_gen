@@ -18,16 +18,17 @@ static bool format_bigendian;
 static bool format_16bit;
 static int64_t samples_counter;
 static FILE *fp;
-static unsigned int tcache_index;
 
 struct tone_cache {
-	bool on;
 	int64_t usec;
-	int64_t bufsize;
 	void *buf;
 };
 
-#define TCACHE_SIZE 8
+enum tcache_index {
+	TCACHE_OFF,
+	TCACHE_ON,
+	TCACHE_SIZE,
+};
 static struct tone_cache tcache[TCACHE_SIZE];
 
 enum wave_type {
@@ -38,39 +39,37 @@ enum wave_type {
 	WAVE_TRIANGLE,
 };
 
+#define bufsize_factor ((format_16bit ? 2 : 1) * ppar->channels)
+
+static void calc_bufsize(int64_t usec, int64_t *samples, int64_t *bufsize)
+{
+	*samples = (ppar->sample_freq * usec) / 1000000;
+	*bufsize = *samples * bufsize_factor;
+}
+
 static void init_tone_cache(void)
 {
-	tcache_index = 0;
 	memset(tcache, 0, sizeof(tcache));
 }
 
-static void add_tone_cache(bool on, int64_t usec, int64_t bufsize, void *buf)
+static void add_tone_cache(bool on, int64_t usec, void *buf)
 {
-	struct tone_cache *t = &tcache[tcache_index % TCACHE_SIZE];
+	struct tone_cache *t = &tcache[on ? TCACHE_ON : TCACHE_OFF];
 
 	free(t->buf);
-	t->on = on;
 	t->usec = usec;
-	t->bufsize = bufsize;
 	t->buf = buf;
-
-	tcache_index++;
 }
 
-static void *find_tone_cache(bool on, int64_t usec, int64_t *bufsize)
+static void *find_tone_cache(bool on, int64_t usec, int64_t *bufsize, int64_t *samples)
 {
-	int i;
-	struct tone_cache *t;
+	struct tone_cache *t = &tcache[on ? TCACHE_ON : TCACHE_OFF];
 
-	for (i = 0; i < TCACHE_SIZE; i++) {
-		t = &tcache[i];
-		if (t->on == on && t->usec == usec) {
-			*bufsize = t->bufsize;
-			return t->buf;
-		}
-	}
+	if (t->usec < usec)
+		return NULL; // need to reconstruct cache
 
-	return NULL;
+	calc_bufsize(usec, samples, bufsize);
+	return t->buf;
 }
 
 static void free_tone_cache(void)
@@ -131,22 +130,19 @@ static void *fill_s16(void *buf, short sample)
 	return p;
 }
 
-#define bufsize_factor ((format_16bit ? 2 : 1) * ppar->channels)
-
-static void *alloc_tone(bool on, int64_t usec, int64_t *bufsize)
+static void *alloc_tone(bool on, int64_t usec, int64_t *bufsize, int64_t *samples)
 {
-	int64_t i, samples;
+	int64_t i;
 	double t;
 	short s;
 	void *buf, *p;
 
-	samples = (ppar->sample_freq * usec) / 1000000;
-	*bufsize = samples * bufsize_factor;
+	calc_bufsize(usec, samples, bufsize);
 
 	if ((buf = p = malloc(*bufsize)) == NULL)
 		abort();
 
-	for (i = 0; i < samples; i++) {
+	for (i = 0; i < *samples; i++) {
 		if (on) {
 			t = (*wave)(i, ppar->sample_freq / ppar->tone1_freq);
 			if (ppar->tone2_freq) {
@@ -166,16 +162,16 @@ static void *alloc_tone(bool on, int64_t usec, int64_t *bufsize)
 
 static void play_tone(bool on, int64_t usec)
 {
-	int64_t bufsize;
+	int64_t bufsize, samples;
 	void *buf;
 
-	if ((buf = find_tone_cache(on, usec, &bufsize)) == NULL) {
-		buf = alloc_tone(on, usec, &bufsize);
-		add_tone_cache(on, usec, bufsize, buf);
+	if ((buf = find_tone_cache(on, usec, &bufsize, &samples)) == NULL) {
+		buf = alloc_tone(on, usec, &bufsize, &samples);
+		add_tone_cache(on, usec, buf);
 	}
 
 	fwrite(buf, bufsize, 1, fp);
-	samples_counter += bufsize / bufsize_factor;
+	samples_counter += samples;
 }
 
 int output_init(struct params *par)
