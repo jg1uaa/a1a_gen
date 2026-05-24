@@ -177,6 +177,7 @@ static void play_tone(bool on, int64_t usec)
 int output_init(struct params *par)
 {
 	enum wave_type w;
+	int64_t usec, bufsize, samples;
 
 	if (par == NULL) {
 		free_tone_cache();
@@ -224,6 +225,14 @@ int output_init(struct params *par)
 	}
 
 	fill = format_16bit ? fill_s16 : fill_u8;
+
+	// initial cache setup: enough with jitter (except pause command)
+	usec = ppar->dot_usec * ppar->wordspace_ratio * 2;
+	add_tone_cache(false, usec,
+		       alloc_tone(false, usec, &bufsize, &samples));
+	usec = ppar->dot_usec * ppar->dah_ratio * 2;
+	add_tone_cache(true, usec,
+		       alloc_tone(true, usec, &bufsize, &samples));
 
 	return 0;
 }
