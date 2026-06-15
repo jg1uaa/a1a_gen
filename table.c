@@ -104,7 +104,7 @@ const struct morse_table codetable[] = {
 	{1, L"7７七",			"--...",		"-..."	},
 	{1, L"8８八",			"---..",		"-.."	},
 	{1, L"9９九",			"----.",		"-."	},
-	{0, L"<>{}",			NULL,			NULL	},
+	{0, L"#<>{}[]",			NULL,			NULL	},
 };
 
 const int codetable_entry = sizeof(codetable) / sizeof(struct morse_table);

@@ -58,6 +58,10 @@ static int parse_command(wchar_t *ptr, int len)
 	}
 	cmd[n] = L'\0';
 
+	/* "#..." as comment */
+	if (*cmd == L'#')
+		return 0;
+
 	if ((arg = wcschr(cmd, L'=')) != NULL)
 		*arg++ = L'\0';
 
@@ -138,13 +142,14 @@ static void play_line(wchar_t *buf)
 	wchar_t *p, *q;
 	const struct morse_table *t;
 
-	/* ignore after '#' */
-	if ((p = wcschr(buf, L'#')) != NULL) *p = L'\0';
-
 	/* skip preceding space */
 	for (p = buf; *p && fetch_code(*p) == NULL; p++);
 
 	for (; *p; p++) {
+		/* ignore after '#' */
+		if (*p == L'#')
+			break;
+
 		if (ppar->ignore_crlf && (*p == L'\n' || *p == L'\r'))
 			continue;
 
