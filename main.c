@@ -117,8 +117,6 @@ int main(int argc, char *argv[])
 	if (player_init(&par)) goto fin0;
 	if (output_init(&par)) goto fin1;
 
-	player_start();
-
 	switch (quiet) {
 	default:
 		fprintf(stderr, "tone %.2f hz", par.tone1_freq);
@@ -132,6 +130,15 @@ int main(int argc, char *argv[])
 			par.dah_ratio, par.wordspace_ratio,
 			par.charspace_ratio);
 		/*FALLTHROUGH*/
+	case 1:
+	case 0:
+		break;
+	}
+
+	player_start();
+
+	switch (quiet) {
+	default:
 	case 1:
 		if ((d = output_sec())) {
 			fprintf(stderr, "%d characters %.2f sec %.2f cpm\n",
