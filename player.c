@@ -24,9 +24,11 @@ struct command {
 };
 
 static int cmd_pause(wchar_t *);
+static int cmd_chars(wchar_t *);
 
 static struct command keywords[] = {
 	{L"pause", cmd_pause, false},
+	{L"chars+", cmd_chars, false},
 };
 
 static int cmd_pause(wchar_t *arg)
@@ -43,6 +45,12 @@ static int cmd_pause(wchar_t *arg)
 	space_sent = true;
 	(*ppar->outfunc)(false, d * 1000);
 
+	return 0;
+}
+
+static int cmd_chars(wchar_t *arg)
+{
+	ppar->sent_chars += wcstol(arg, NULL, 10);
 	return 0;
 }
 
